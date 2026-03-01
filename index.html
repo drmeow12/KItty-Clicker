@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -110,61 +111,6 @@ button{ padding:8px 12px; margin:4px; cursor:pointer; }
     font-size:13px;
     color:#555;
     margin-top:6px;
-}
-/* Stop the blue/gray highlight/outline when clicking buttons */
-button:focus { outline: none; }
-button:focus-visible { outline: none; }
-
-/* Extra: remove the mobile tap highlight */
-button { -webkit-tap-highlight-color: transparent; }
-
-/* For your big paw button specifically */
-#catButton:focus { outline: none; }
-#catButton:focus-visible { outline: none; }
-/* Stop mobile double-tap zoom + scrolling while tapping */
-html, body {
-  touch-action: manipulation;   /* prevents double-tap zoom in many browsers */
-}
-
-/* Make sure the main click button NEVER triggers gestures */
-#catButton {
-  touch-action: none;           /* no zoom/scroll gestures on this element */
-  user-select: none;
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-/* ===== Mobile sizing (touch screens) ===== */
-@media (pointer: coarse), (max-width: 700px) {
-
-  .panel{
-    width: min(92vw, 520px);
-    padding: 14px;
-  }
-
-  button{
-    padding: 14px 18px;
-    margin: 8px;
-    font-size: 18px;
-  }
-
-  #catButton{
-    font-size: 96px;
-    padding: 28px;
-  }
-
-  #guideBtn{
-    padding: 14px 16px;
-    font-size: 18px;
-  }
-
-  #totalBox{
-    padding: 12px;
-    font-size: 16px;
-  }
-
-  #catnipPerSec{
-    font-size: 22px;
-  }
 }
 </style>
 </head>
@@ -417,8 +363,9 @@ function update(){
 
   document.getElementById("prestigeBtn").textContent = "Rebirth ("+format(prestigeCost())+" required)";
 
-  renderBreeds();
-breedsDirty = false; // optional, can keep it
+  if(breedsDirty){
+    renderBreeds();
+    breedsDirty = false;
   }
 }
 
@@ -500,38 +447,20 @@ function evolveTo(key){
 }
 
 /* ===== Click ===== */
-/* ===== Click (mobile-safe spam click) ===== */
-const catButton = document.getElementById("catButton");
+const catButton=document.getElementById("catButton");
+catButton.addEventListener("click",(e)=>{
+  const gain=floor10(game.clickPower*game.clickMulti);
+  game.catnip+=gain;
+  game.total+=gain;
 
-function doClick(x, y){
-  const gain = floor10(game.clickPower * game.clickMulti);
-  game.catnip += gain;
-  game.total += gain;
-
-  const offsetX = (Math.random()*40) - 20;
-  const offsetY = (Math.random()*40) - 20;
-  showPopup("+" + format(gain), x + offsetX, y + offsetY);
+  const offsetX=(Math.random()*40)-20;
+  const offsetY=(Math.random()*40)-20;
+  showPopup("+"+format(gain),e.pageX+offsetX,e.pageY+offsetY);
 
   saveGame();
   update();
-}
+});
 
-// Pointer events = best for mobile + desktop
-catButton.addEventListener("pointerdown", (e) => {
-  e.preventDefault();              // stops double-tap zoom / page jank
-  catButton.setPointerCapture?.(e.pointerId);
-
-  const x = e.clientX;
-  const y = e.clientY;
-  doClick(x, y);
-}, { passive: false });
-
-// Backup for older iOS Safari
-catButton.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  const t = e.changedTouches[0];
-  doClick(t.clientX, t.clientY);
-}, { passive: false });
 function showPopup(text,x,y){
   const popup=document.createElement("div");
   popup.className="popup";
