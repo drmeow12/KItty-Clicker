@@ -111,6 +111,16 @@ button{ padding:8px 12px; margin:4px; cursor:pointer; }
     color:#555;
     margin-top:6px;
 }
+/* Stop the blue/gray highlight/outline when clicking buttons */
+button:focus { outline: none; }
+button:focus-visible { outline: none; }
+
+/* Extra: remove the mobile tap highlight */
+button { -webkit-tap-highlight-color: transparent; }
+
+/* For your big paw button specifically */
+#catButton:focus { outline: none; }
+#catButton:focus-visible { outline: none; }
 </style>
 </head>
 <body>
