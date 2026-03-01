@@ -133,6 +133,39 @@ html, body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+/* ===== Mobile sizing (touch screens) ===== */
+@media (pointer: coarse), (max-width: 700px) {
+
+  .panel{
+    width: min(92vw, 520px);
+    padding: 14px;
+  }
+
+  button{
+    padding: 14px 18px;
+    margin: 8px;
+    font-size: 18px;
+  }
+
+  #catButton{
+    font-size: 96px;
+    padding: 28px;
+  }
+
+  #guideBtn{
+    padding: 14px 16px;
+    font-size: 18px;
+  }
+
+  #totalBox{
+    padding: 12px;
+    font-size: 16px;
+  }
+
+  #catnipPerSec{
+    font-size: 22px;
+  }
+}
 </style>
 </head>
 <body>
@@ -384,9 +417,8 @@ function update(){
 
   document.getElementById("prestigeBtn").textContent = "Rebirth ("+format(prestigeCost())+" required)";
 
-  if(breedsDirty){
-    renderBreeds();
-    breedsDirty = false;
+  renderBreeds();
+breedsDirty = false; // optional, can keep it
   }
 }
 
