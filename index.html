@@ -121,6 +121,18 @@ button { -webkit-tap-highlight-color: transparent; }
 /* For your big paw button specifically */
 #catButton:focus { outline: none; }
 #catButton:focus-visible { outline: none; }
+/* Stop mobile double-tap zoom + scrolling while tapping */
+html, body {
+  touch-action: manipulation;   /* prevents double-tap zoom in many browsers */
+}
+
+/* Make sure the main click button NEVER triggers gestures */
+#catButton {
+  touch-action: none;           /* no zoom/scroll gestures on this element */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
 </style>
 </head>
 <body>
@@ -456,20 +468,38 @@ function evolveTo(key){
 }
 
 /* ===== Click ===== */
-const catButton=document.getElementById("catButton");
-catButton.addEventListener("click",(e)=>{
-  const gain=floor10(game.clickPower*game.clickMulti);
-  game.catnip+=gain;
-  game.total+=gain;
+/* ===== Click (mobile-safe spam click) ===== */
+const catButton = document.getElementById("catButton");
 
-  const offsetX=(Math.random()*40)-20;
-  const offsetY=(Math.random()*40)-20;
-  showPopup("+"+format(gain),e.pageX+offsetX,e.pageY+offsetY);
+function doClick(x, y){
+  const gain = floor10(game.clickPower * game.clickMulti);
+  game.catnip += gain;
+  game.total += gain;
+
+  const offsetX = (Math.random()*40) - 20;
+  const offsetY = (Math.random()*40) - 20;
+  showPopup("+" + format(gain), x + offsetX, y + offsetY);
 
   saveGame();
   update();
-});
+}
 
+// Pointer events = best for mobile + desktop
+catButton.addEventListener("pointerdown", (e) => {
+  e.preventDefault();              // stops double-tap zoom / page jank
+  catButton.setPointerCapture?.(e.pointerId);
+
+  const x = e.clientX;
+  const y = e.clientY;
+  doClick(x, y);
+}, { passive: false });
+
+// Backup for older iOS Safari
+catButton.addEventListener("touchstart", (e) => {
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  doClick(t.clientX, t.clientY);
+}, { passive: false });
 function showPopup(text,x,y){
   const popup=document.createElement("div");
   popup.className="popup";
