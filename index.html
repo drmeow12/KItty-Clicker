@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Kitty Clicker</title>
+<style>
+body{
+    font-family:Arial;
+    background:linear-gradient(#ffe6f2,#ffffff);
+    text-align:center;
+    overflow-x:hidden;
+}
+.panel{
+    background:#ffffffcc;
+    width:420px;
+    margin:15px auto;
+    padding:10px;
+    border-radius:12px;
+}
+button{ padding:8px 12px; margin:4px; cursor:pointer; }
+#catButton{
+    font-size:70px;
+    border:none;
+    border-radius:50%;
+    padding:20px;
+    background:radial-gradient(circle at 30% 30%, #ff99cc, #ff66aa);
+}
+#totalBox{
+    position:fixed;
+    top:10px;
+    right:10px;
+    background:#ffffffcc;
+    padding:8px;
+    border-radius:8px;
+    font-weight:bold;
+    z-index:5;
+}
+#catnipPerSec{ font-size:20px; }
+
+.popup{
+    position:absolute;
+    color:#ff3399;
+    font-weight:bold;
+    pointer-events:none;
+    animation:floatUp 1s ease-out forwards;
+    z-index:6;
+}
+@keyframes floatUp{
+    from{opacity:1; transform:translateY(0);}
+    to{opacity:0; transform:translateY(-40px);}
+}
+
+/* Mouse image */
+#mouse{
+    position:absolute;
+    width:80px;
+    height:auto;
+    display:none;
+    cursor:pointer;
+    z-index:6;
+    user-select:none;
+}
+
+/* Guidebook button */
+#guideBtn{
+    position:fixed;
+    left:10px;
+    top:10px;
+    background:#ffffffcc;
+    border-radius:12px;
+    padding:10px 12px;
+    font-weight:bold;
+    z-index:7;
+}
+
+/* Overlay */
+.overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+}
+.modal{
+    width:min(560px, 92vw);
+    background:#fff;
+    border-radius:14px;
+    padding:16px;
+    text-align:left;
+}
+.modal h2, .modal h3{ margin:0 0 8px 0; }
+.modal p{ margin:8px 0; line-height:1.35; }
+.modal .row{
+    display:flex;
+    gap:10px;
+    justify-content:flex-end;
+    flex-wrap:wrap;
+    margin-top:12px;
+}
+.tip{
+    background:#ffe6f2;
+    border-radius:10px;
+    padding:10px;
+}
+.small{ font-size:13px; color:#444; }
+
+.evolveHint{
+    font-size:13px;
+    color:#555;
+    margin-top:6px;
+}
+</style>
+</head>
+<body>
+
+<h1>Kitty Clicker</h1>
+
+<div id="totalBox">
+Total Catnip: <span id="totalCatnip">0</span>
+<div id="catnipPerSec">0 catnip/sec</div>
+</div>
+
+<button id="guideBtn">Guidebook</button>
+
+<div class="panel">
+<h2>Catnip: <span id="catnip">0</span></h2>
+<button id="catButton">🐾🐾</button>
+</div>
+
+<div class="panel">
+<h3>Upgrades</h3>
+
+<button id="cuterBtn">Cuter Cats - <span id="cuterCost">50</span></button>
+<p>Cuter Cats Multi: <span id="cuterMulti">x1</span></p>
+
+<button id="globalBtn">Global Multiplier - <span id="globalCost">2,000</span></button>
+<p>Global Multi: <span id="globalMulti">x1</span></p>
+
+<button id="clickBtn">Click Multiplier - <span id="clickCost">500</span></button>
+<p>Click Multi: <span id="clickMulti">x1</span></p>
+
+<p>Prestige Cat Bonus: <span id="prestigeBonus">x1</span></p>
+<p>Click Total Multiplier: <span id="clickTotalMulti">x1</span></p>
+<p>Cats Total Multiplier: <span id="catsTotalMulti">x1</span></p>
+</div>
+
+<div class="panel">
+<h3>Breeds</h3>
+<p>Breed Synergy Bonus: <span id="synergyBonus">+0%</span></p>
+<div id="breeds"></div>
+</div>
+
+<div class="panel">
+<h3>Prestige</h3>
+<p>Nine Lives: <span id="prestige">0</span></p>
+<button id="prestigeBtn">Rebirth</button>
+</div>
+
+<div class="panel">
+<button id="resetBtn" style="color:red;">Delete All Progress</button>
+</div>
+
+<img id="mouse" alt="mouse">
+
+<!-- Tutorial overlay -->
+<div id="tutorialOverlay" class="overlay">
+  <div class="modal">
+    <h2>Welcome</h2>
+    <p>Click to earn catnip. Buy breeds to produce catnip every second.</p>
+
+    <div class="tip">
+      <b>Evolution</b><br>
+      If you own 10 of a breed, you can press <b>Evolve</b> to convert 10 of that breed into 1 of the next breed.<br>
+      Or you can always buy the next breed directly with catnip.
+    </div>
+
+    <p class="small">You can open the Guidebook anytime using the button on the left.</p>
+
+    <div class="row">
+      <button id="tutorialCloseBtn">Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- Guidebook overlay -->
+<div id="guideOverlay" class="overlay">
+  <div class="modal">
+    <h2>Guidebook</h2>
+
+    <h3>Basics</h3>
+    <p>Click to earn catnip. Breeds produce catnip every second.</p>
+
+    <h3>Evolution</h3>
+    <p>Convert 10 of a breed into 1 of the next breed using the Evolve button (when available). Or buy the next breed with catnip.</p>
+
+    <h3>Upgrades</h3>
+    <p>
+      Cuter Cats: boosts breed production.<br>
+      Global Multiplier: bigger boost to breed production.<br>
+      Click Multiplier: boosts catnip per click.
+    </p>
+
+    <h3>Prestige</h3>
+    <p>
+      Requirement: 50,000 × 2^prestige<br>
+      Bonus: 2^prestige to cat production
+    </p>
+
+    <div class="row">
+      <button id="guideCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
+function floor10(n){ return Math.floor(n*10)/10; }
+function format(n){ return floor10(n).toLocaleString(); }
+
+/* ===== Evolution order ===== */
+const EVOLUTION_ORDER = ["street","tabby","siamese","maine","golden","cosmic"];
+const EVOLVE_NEED = 10; // convert 10 of previous into 1 next
+
+const DEFAULT_GAME = {
+  catnip:0,
+  total:0,
+  clickPower:1,
+  cuterMulti:1,
+  globalMulti:1,
+  clickMulti:1,
+  cuterCost:50,
+  globalCost:2000,
+  clickCost:500,
+  prestige:0,
+  breeds:{
+    street:{name:"Street Cat",owned:0,base:2, baseCost:200, cost:200},
+    tabby:{name:"Tabby Cat",owned:0,base:6, baseCost:1500, cost:1500},
+    siamese:{name:"Siamese Cat",owned:0,base:25, baseCost:15000, cost:15000},
+    maine:{name:"Maine Coon",owned:0,base:150, baseCost:180000, cost:180000},
+    golden:{name:"Golden Cat",owned:0,base:900, baseCost:2000000, cost:2000000},
+    cosmic:{name:"Cosmic Cat",owned:0,base:7000, baseCost:20000000, cost:20000000}
+  }
+};
+
+const game = deepClone(DEFAULT_GAME);
+
+const SAVE_KEY = "kittyClickerSave_v4";
+const TUTORIAL_KEY = "kittyClickerTutorialSeen_v4";
+
+function saveGame(){
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(game)); } catch(e){}
+}
+function loadGame(){
+  const raw = localStorage.getItem(SAVE_KEY);
+  if(!raw) return false;
+  try{
+    const data = JSON.parse(raw);
+
+    for(const k in DEFAULT_GAME){
+      if(k === "breeds") continue;
+      if(typeof data[k] !== "undefined") game[k] = data[k];
+    }
+
+    if(data.breeds){
+      for(const bk in DEFAULT_GAME.breeds){
+        const src = data.breeds[bk] || {};
+        Object.assign(game.breeds[bk], src);
+
+        if(typeof game.breeds[bk].baseCost !== "number"){
+          game.breeds[bk].baseCost = DEFAULT_GAME.breeds[bk].baseCost;
+        }
+        if(typeof game.breeds[bk].cost !== "number"){
+          game.breeds[bk].cost = game.breeds[bk].baseCost;
+        }
+        if(typeof game.breeds[bk].owned !== "number"){
+          game.breeds[bk].owned = DEFAULT_GAME.breeds[bk].owned;
+        }
+      }
+    }
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+function hardReset(){
+  const fresh = deepClone(DEFAULT_GAME);
+  for(const k in fresh) game[k] = fresh[k];
+  saveGame();
+}
+
+/* ===== Prestige doubles cost and bonus ===== */
+function prestigeCost(){
+  return Math.floor(50000 * Math.pow(2, game.prestige));
+}
+function prestigeBonus(){
+  return Math.pow(2, game.prestige);
+}
+
+/* ===== Other bonuses ===== */
+function synergyBonus(){
+  let count=0;
+  for(const k in game.breeds){
+    if(game.breeds[k].owned>0) count++;
+  }
+  return 1 + (count * 0.05);
+}
+function stackBonus(owned){
+  return 1 + (Math.floor(owned/10) * 0.2);
+}
+
+function catsProduction(){
+  let total=0;
+  for(const k in game.breeds){
+    const b=game.breeds[k];
+    let breedProd = b.base * b.owned;
+    breedProd *= stackBonus(b.owned);
+    total += breedProd;
+  }
+  total *= game.cuterMulti;
+  total *= game.globalMulti;
+  total *= prestigeBonus();
+  total *= synergyBonus();
+  return floor10(total);
+}
+
+function clickTotalMultiplier(){ return floor10(game.clickMulti); }
+function catsTotalMultiplier(){ return floor10(game.cuterMulti * game.globalMulti * prestigeBonus() * synergyBonus()); }
+
+/* ===== Evolution check ===== */
+function canEvolveTo(key){
+  const idx = EVOLUTION_ORDER.indexOf(key);
+  if(idx <= 0) return false;
+  const prev = EVOLUTION_ORDER[idx - 1];
+  return game.breeds[prev].owned >= EVOLVE_NEED;
+}
+
+let breedsDirty = true;
+
+function update(){
+  document.getElementById("catnip").textContent=format(game.catnip);
+  document.getElementById("totalCatnip").textContent=format(game.total);
+  document.getElementById("catnipPerSec").textContent=format(catsProduction())+" catnip/sec";
+
+  document.getElementById("cuterCost").textContent=format(game.cuterCost);
+  document.getElementById("globalCost").textContent=format(game.globalCost);
+  document.getElementById("clickCost").textContent=format(game.clickCost);
+
+  document.getElementById("cuterMulti").textContent="x"+format(game.cuterMulti);
+  document.getElementById("globalMulti").textContent="x"+format(game.globalMulti);
+  document.getElementById("clickMulti").textContent="x"+format(game.clickMulti);
+
+  document.getElementById("prestigeBonus").textContent="x"+format(prestigeBonus());
+  document.getElementById("clickTotalMulti").textContent="x"+format(clickTotalMultiplier());
+  document.getElementById("catsTotalMulti").textContent="x"+format(catsTotalMultiplier());
+
+  document.getElementById("synergyBonus").textContent="+"+floor10((synergyBonus()-1)*100)+"%";
+  document.getElementById("prestige").textContent=game.prestige;
+
+  document.getElementById("prestigeBtn").textContent = "Rebirth ("+format(prestigeCost())+" required)";
+
+  if(breedsDirty){
+    renderBreeds();
+    breedsDirty = false;
+  }
+}
+
+/* ===== Breeds render: ALWAYS buyable, and ALSO evolve button when you have 10 previous ===== */
+function renderBreeds(){
+  const container=document.getElementById("breeds");
+  container.innerHTML="";
+
+  for(const key of EVOLUTION_ORDER){
+    const b = game.breeds[key];
+    const div=document.createElement("div");
+
+    const baseProd = b.base*b.owned;
+    const totalProd = baseProd * stackBonus(b.owned) *
+                      game.cuterMulti * game.globalMulti *
+                      prestigeBonus() * synergyBonus();
+
+    div.innerHTML =
+      "<b>"+b.name+"</b><br>"+
+      "Owned: "+b.owned+"<br>"+
+      "Base Production: "+format(baseProd)+" catnip/sec<br>"+
+      "Total Production: "+format(totalProd)+" catnip/sec<br>"+
+      "Cost: "+format(b.cost)+"<br>";
+
+    // Buy button (always allowed, just needs catnip)
+    const buyBtn=document.createElement("button");
+    buyBtn.textContent="Buy";
+    buyBtn.disabled = (game.catnip < b.cost);
+    buyBtn.onclick=()=>buyBreed(key);
+    div.appendChild(buyBtn);
+
+    // Evolve button (only for breeds after the first)
+    const idx = EVOLUTION_ORDER.indexOf(key);
+    if(idx > 0){
+      const prevKey = EVOLUTION_ORDER[idx - 1];
+      const evolveBtn=document.createElement("button");
+      evolveBtn.textContent="Evolve (10 "+game.breeds[prevKey].name+" -> 1 "+b.name+")";
+      evolveBtn.disabled = !canEvolveTo(key);
+      evolveBtn.onclick=()=>evolveTo(key);
+
+      div.appendChild(evolveBtn);
+
+      const hint=document.createElement("div");
+      hint.className="evolveHint";
+      hint.textContent = "You can evolve if you own 10 of the previous breed, or you can buy this breed with catnip.";
+      div.appendChild(hint);
+    }
+
+    container.appendChild(div);
+    container.appendChild(document.createElement("hr"));
+  }
+}
+
+function buyBreed(key){
+  const b=game.breeds[key];
+  if(game.catnip>=b.cost){
+    game.catnip-=b.cost;
+    b.owned++;
+    b.cost=floor10(b.cost*1.18);
+    breedsDirty = true;
+    saveGame();
+    update();
+  }
+}
+
+function evolveTo(key){
+  const idx = EVOLUTION_ORDER.indexOf(key);
+  if(idx <= 0) return;
+  const prevKey = EVOLUTION_ORDER[idx - 1];
+
+  if(game.breeds[prevKey].owned >= EVOLVE_NEED){
+    game.breeds[prevKey].owned -= EVOLVE_NEED;
+    game.breeds[key].owned += 1;
+
+    breedsDirty = true;
+    saveGame();
+    update();
+  }
+}
+
+/* ===== Click ===== */
+const catButton=document.getElementById("catButton");
+catButton.addEventListener("click",(e)=>{
+  const gain=floor10(game.clickPower*game.clickMulti);
+  game.catnip+=gain;
+  game.total+=gain;
+
+  const offsetX=(Math.random()*40)-20;
+  const offsetY=(Math.random()*40)-20;
+  showPopup("+"+format(gain),e.pageX+offsetX,e.pageY+offsetY);
+
+  saveGame();
+  update();
+});
+
+function showPopup(text,x,y){
+  const popup=document.createElement("div");
+  popup.className="popup";
+  popup.textContent=text;
+  popup.style.left=x+"px";
+  popup.style.top=y+"px";
+  document.body.appendChild(popup);
+  setTimeout(()=>popup.remove(),1000);
+}
+
+/* ===== Upgrades ===== */
+document.getElementById("cuterBtn").onclick=()=>{
+  if(game.catnip>=game.cuterCost){
+    game.catnip-=game.cuterCost;
+    game.cuterMulti=floor10(game.cuterMulti*1.25);
+    game.cuterCost=floor10(game.cuterCost*1.8);
+    breedsDirty = true;
+    saveGame();
+    update();
+  }
+};
+
+document.getElementById("globalBtn").onclick=()=>{
+  if(game.catnip>=game.globalCost){
+    game.catnip-=game.globalCost;
+    game.globalMulti=floor10(game.globalMulti*1.5);
+    game.globalCost=floor10(game.globalCost*4);
+    breedsDirty = true;
+    saveGame();
+    update();
+  }
+};
+
+/* Buffed click multi */
+document.getElementById("clickBtn").onclick=()=>{
+  if(game.catnip>=game.clickCost){
+    game.catnip-=game.clickCost;
+    game.clickMulti=floor10(game.clickMulti*1.5);
+    game.clickCost=floor10(game.clickCost*2.0);
+    saveGame();
+    update();
+  }
+};
+
+/* ===== Prestige ===== */
+document.getElementById("prestigeBtn").onclick=()=>{
+  const req = prestigeCost();
+  if(game.catnip>=req){
+    game.prestige++;
+
+    game.catnip=0;
+    game.cuterMulti=1;
+    game.globalMulti=1;
+    game.clickMulti=1;
+    game.cuterCost=50;
+    game.globalCost=2000;
+    game.clickCost=500;
+
+    // reset to NO cats
+    for(const k in game.breeds){
+      game.breeds[k].owned=0;
+      game.breeds[k].cost=game.breeds[k].baseCost;
+    }
+
+    breedsDirty = true;
+    saveGame();
+    update();
+  }
+};
+
+/* ===== Auto production ===== */
+setInterval(()=>{
+  const gain=catsProduction();
+  game.catnip+=gain;
+  game.total+=gain;
+  saveGame();
+  update();
+},1000);
+
+/* ===== Mouse ===== */
+const mouse=document.getElementById("mouse");
+mouse.src =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="160" viewBox="0 0 240 160">
+  <defs>
+    <radialGradient id="g" cx="35%" cy="35%" r="80%">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#d9d9d9"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="120" cy="95" rx="85" ry="50" fill="url(#g)" stroke="#9a9a9a" stroke-width="4"/>
+  <ellipse cx="70" cy="70" rx="35" ry="28" fill="url(#g)" stroke="#9a9a9a" stroke-width="4"/>
+  <ellipse cx="55" cy="52" rx="18" ry="16" fill="#f3b1b1" stroke="#9a9a9a" stroke-width="4"/>
+  <ellipse cx="85" cy="52" rx="18" ry="16" fill="#f3b1b1" stroke="#9a9a9a" stroke-width="4"/>
+  <circle cx="78" cy="72" r="6" fill="#111"/>
+  <circle cx="62" cy="78" r="4" fill="#e26a6a"/>
+  <path d="M35 104 C10 120, 10 140, 30 148" fill="none" stroke="#caa" stroke-width="6" stroke-linecap="round"/>
+  <path d="M92 88 L45 92" stroke="#666" stroke-width="3" stroke-linecap="round"/>
+  <path d="M92 92 L45 102" stroke="#666" stroke-width="3" stroke-linecap="round"/>
+  <path d="M92 96 L45 112" stroke="#666" stroke-width="3" stroke-linecap="round"/>
+</svg>
+`);
+mouse.draggable = false;
+
+function spawnMouse(){
+  mouse.style.display="block";
+  mouse.style.top=Math.random()*70+10+"%";
+  mouse.style.left="-90px";
+
+  const speed=3+Math.random()*2;
+  let pos=-90;
+
+  const move=setInterval(()=>{
+    pos+=speed;
+    mouse.style.left=pos+"px";
+
+    if(pos>window.innerWidth){
+      clearInterval(move);
+      mouse.style.display="none";
+      scheduleMouse();
+    }
+  },20);
+
+  mouse.onclick=()=>{
+    const bonus=Math.max(1, floor10(game.catnip*0.3));
+    game.catnip+=bonus;
+    game.total+=bonus;
+    showPopup("+"+format(bonus),mouse.offsetLeft,mouse.offsetTop);
+
+    clearInterval(move);
+    mouse.style.display="none";
+    scheduleMouse();
+
+    saveGame();
+    update();
+  };
+}
+
+function scheduleMouse(){
+  setTimeout(spawnMouse,30000+Math.random()*30000);
+}
+
+/* ===== Reset ===== */
+document.getElementById("resetBtn").onclick=()=>{
+  if(confirm("Delete ALL progress? This cannot be undone.")){
+    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(TUTORIAL_KEY);
+    hardReset();
+    breedsDirty = true;
+    update();
+  }
+};
+
+/* ===== Tutorial + Guidebook ===== */
+const tutorialOverlay = document.getElementById("tutorialOverlay");
+const guideOverlay = document.getElementById("guideOverlay");
+
+function openOverlay(el){ el.style.display = "flex"; }
+function closeOverlay(el){ el.style.display = "none"; }
+
+document.getElementById("tutorialCloseBtn").onclick=()=>{
+  localStorage.setItem(TUTORIAL_KEY, "1");
+  closeOverlay(tutorialOverlay);
+};
+
+document.getElementById("guideBtn").onclick=()=> openOverlay(guideOverlay);
+document.getElementById("guideCloseBtn").onclick=()=> closeOverlay(guideOverlay);
+
+guideOverlay.addEventListener("click",(e)=>{
+  if(e.target === guideOverlay) closeOverlay(guideOverlay);
+});
+/* ===== Cheat code (hidden) =====
+   Hold C + A + T at the same time to gain 100,000,000 catnip.
+   Not shown in UI.
+*/
+const cheatKeysDown = new Set();
+let cheatTriggered = false;
+
+window.addEventListener("keydown", (e) => {
+  if (e.repeat) return;
+  const k = (e.key || "").toLowerCase();
+
+  if (k === "c" || k === "a" || k === "t") {
+    cheatKeysDown.add(k);
+  }
+
+  if (!cheatTriggered &&
+      cheatKeysDown.has("c") &&
+      cheatKeysDown.has("a") &&
+      cheatKeysDown.has("t")) {
+
+    cheatTriggered = true;
+
+    const bonus = 100000000;
+    game.catnip += bonus;
+    game.total += bonus;
+
+    // optional popup (remove if you want it totally silent)
+    showPopup("+100,000,000", window.innerWidth * 0.5, window.innerHeight * 0.3);
+
+    breedsDirty = true; // in case the new money enables buys
+    saveGame();
+    update();
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  const k = (e.key || "").toLowerCase();
+  if (k === "c" || k === "a" || k === "t") {
+    cheatKeysDown.delete(k);
+  }
+
+  // allow it to trigger again next time you hold the combo
+  if (!cheatKeysDown.has("c") || !cheatKeysDown.has("a") || !cheatKeysDown.has("t")) {
+    cheatTriggered = false;
+  }
+});
+/* ===== Start ===== */
+loadGame();
+breedsDirty = true;
+update();
+scheduleMouse();
+
+if(!localStorage.getItem(TUTORIAL_KEY)){
+  openOverlay(tutorialOverlay);
+}
+</script>
+</body>
+</html>
